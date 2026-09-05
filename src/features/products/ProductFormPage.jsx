@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useNavigate, useParams } from 'react-router-dom'
+import { Upload, Trash2 } from 'lucide-react'
 import usePageTitle from '@/hooks/usePageTitle'
 import {
   useCategories,
@@ -60,6 +61,7 @@ const productSchema = z
     maxStock: z.coerce.number().int().min(0),
     imageColor: z.string(),
     imageLabel: z.string().optional(),
+    imageUrl: z.string().optional(),
   })
   .refine((values) => values.maxStock >= values.minStock, {
     message: 'Max stock must be >= min stock',
@@ -85,6 +87,7 @@ const DEFAULTS = {
   maxStock: 100,
   imageColor: '#0f172a',
   imageLabel: '',
+  imageUrl: '',
 }
 
 export default function ProductFormPage() {
@@ -103,6 +106,7 @@ export default function ProductFormPage() {
   const updateProduct = useUpdateProduct()
 
   const [serverError, setServerError] = useState('')
+  const fileInputRef = useRef(null)
 
   const categories = categoriesQuery.data?.items || []
   const brands = brandsQuery.data?.items || []
@@ -122,6 +126,28 @@ export default function ProductFormPage() {
 
   const imageColor = watch('imageColor')
   const imageLabel = watch('imageLabel')
+  const imageUrl = watch('imageUrl')
+
+  function handleUploadFile(event) {
+    const file = event.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      toast.error(t('products.imageTypeError'))
+      return
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error(t('products.imageSizeError'))
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => setValue('imageUrl', reader.result, { shouldValidate: true })
+    reader.readAsDataURL(file)
+  }
+
+  function handleRemoveImage() {
+    setValue('imageUrl', '', { shouldValidate: true })
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
 
   useEffect(() => {
     if (!isEdit) return
@@ -146,6 +172,7 @@ export default function ProductFormPage() {
       maxStock: product.maxStock,
       imageColor: product.image?.color || DEFAULTS.imageColor,
       imageLabel: product.image?.label || '',
+      imageUrl: product.image?.imageUrl || '',
     })
   }, [isEdit, productQuery.data, reset])
 
@@ -168,7 +195,11 @@ export default function ProductFormPage() {
       stock: values.trackInventory ? Number(values.stock) : undefined,
       minStock: Number(values.minStock),
       maxStock: Number(values.maxStock),
-      image: { label: values.imageLabel?.trim() || undefined, color: values.imageColor },
+      image: {
+        label: values.imageLabel?.trim() || undefined,
+        color: values.imageColor,
+        imageUrl: values.imageUrl || undefined,
+      },
     }
     try {
       if (isEdit) {
@@ -292,10 +323,39 @@ export default function ProductFormPage() {
         <FormSection title={t('products.media')}>
           <div className="flex flex-wrap items-center gap-6">
             <ProductImage
-              product={{ name: watch('name'), image: { label: imageLabel, color: imageColor } }}
-              size="lg"
+              product={{ name: watch('name'), image: { label: imageLabel, color: imageColor, imageUrl } }}
+              size="xl"
             />
-            <div className="flex-1 space-y-3">
+            <div className="flex-1 space-y-4">
+              <div>
+                <p className="mb-1.5 text-sm font-medium text-slate-700 dark:text-slate-300">
+                  {t('products.imageUpload')}
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleUploadFile}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    icon={Upload}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {imageUrl ? t('products.imageChange') : t('products.imageUploadBtn')}
+                  </Button>
+                  {imageUrl ? (
+                    <Button type="button" variant="danger-outline" size="sm" icon={Trash2} onClick={handleRemoveImage}>
+                      {t('products.imageRemove')}
+                    </Button>
+                  ) : null}
+                </div>
+                <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">{t('products.imageHint')}</p>
+              </div>
               <div>
                 <p className="mb-1.5 text-sm font-medium text-slate-700 dark:text-slate-300">
                   {t('products.imageLabel')}

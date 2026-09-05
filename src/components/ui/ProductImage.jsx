@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils'
 
 export default function ProductImage({ product, size = 'md', className }) {
   const image = product?.image
+  const imageUrl = image?.imageUrl
   const label = image?.label || product?.name?.[0] || 'P'
   const color = image?.color || '#334155'
 
@@ -33,14 +34,14 @@ export default function ProductImage({ product, size = 'md', className }) {
   return (
     <span
       className={cn(
-        'inline-flex shrink-0 select-none items-center justify-center font-semibold text-white',
+        'inline-flex shrink-0 select-none items-center justify-center overflow-hidden font-semibold text-white',
         sizes[size],
         className,
       )}
       style={{ backgroundColor: color }}
       aria-hidden="true"
     >
-      {label}
+      {imageUrl ? <img src={imageUrl} alt="" className="h-full w-full object-cover" /> : label}
     </span>
   )
 }
@@ -48,7 +49,7 @@ export default function ProductImage({ product, size = 'md', className }) {
 ProductImage.propTypes = {
   product: PropTypes.shape({
     name: PropTypes.string,
-    image: PropTypes.shape({ label: PropTypes.string, color: PropTypes.string }),
+    image: PropTypes.shape({ label: PropTypes.string, color: PropTypes.string, imageUrl: PropTypes.string }),
   }),
   size: PropTypes.oneOf(['xs', 'sm', 'md', 'lg', 'xl']),
   className: PropTypes.string,
