@@ -14,6 +14,9 @@ const useAuthStore = create(
         if (permissions) {
           localStorage.setItem('auth_permissions', JSON.stringify(permissions))
         }
+        if (token) {
+          localStorage.setItem('access_token', token)
+        }
         set({ user, token, isAuthenticated: true })
       },
 
@@ -29,6 +32,7 @@ const useAuthStore = create(
       logout() {
         localStorage.removeItem('auth_role')
         localStorage.removeItem('auth_permissions')
+        localStorage.removeItem('access_token')
         set({ user: null, token: null, isAuthenticated: false })
       },
     }),

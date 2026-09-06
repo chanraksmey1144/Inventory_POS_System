@@ -1,41 +1,41 @@
 import api from './api'
 import { mockResolve, mockReject } from '@/mocks/helpers'
-import { ROLE_PERMISSIONS } from '@/constants/permissions'
-import { users } from '@/mocks/users'
-
-const DEMO_EMAIL = 'demo@storemaster.com'
-const DEMO_PASSWORD = 'password'
 
 export const authService = {
   async login({ email, password, rememberMe }) {
-    await mockResolve(null, 600)
+    const result = await api.post('/auth/login', { email, password, rememberMe })
 
-    const normalized = email.trim().toLowerCase()
-    if (normalized === DEMO_EMAIL && password === DEMO_PASSWORD) {
-      const user = users[0]
-      const permissions = ROLE_PERMISSIONS[user.role]
-      return {
-        user,
-        token: `mock-token-${Date.now()}`,
-        permissions,
-      }
+    const token = result.token
+    if (token) {
+      localStorage.setItem('access_token', token)
     }
 
-    const found = users.find((record) => record.email.toLowerCase() === normalized)
-    if (found && password === 'password') {
-      return {
-        user: found,
-        token: `mock-token-${Date.now()}`,
-        permissions: ROLE_PERMISSIONS[found.role],
-      }
+    const role = result.user?.role?.key
+    return {
+      user: result.user,
+      token,
+      role,
+      permissions: result.permissions || [],
     }
-
-    throw new Error('Invalid email or password')
   },
 
   async logout() {
-    await mockResolve(null, 200)
+    try {
+      await api.post('/auth/logout')
+    } catch {
+      /* token already invalid or backend unreachable */
+    }
+    localStorage.removeItem('access_token')
     return null
+  },
+
+  async me() {
+    const result = await api.get('/auth/me')
+    return {
+      user: result.user,
+      role: result.user?.role?.key,
+      permissions: result.permissions || [],
+    }
   },
 
   async forgotPassword(email) {
@@ -54,10 +54,5 @@ export const authService = {
       return mockReject('Current password is incorrect')
     }
     return { success: true }
-  },
-
-  async me() {
-    const { user } = await api.get('/users', { detail: 'id', params: { id: 'u-1' } })
-    return user
   },
 }

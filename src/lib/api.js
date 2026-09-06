@@ -1,4 +1,6 @@
-const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+import useAuthStore from '@/app/store/useAuthStore'
+
+const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000/api').replace(/\/$/, '')
 
 export class ApiError extends Error {
   constructor(message, status = 0, errors = null) {
@@ -9,7 +11,7 @@ export class ApiError extends Error {
   }
 }
 
-async function request(path, { method = 'GET', body, headers, params } = {}) {
+export async function request(path, { method = 'GET', body, headers, params } = {}) {
   let url = `${API_URL}${path}`
 
   if (params) {
@@ -62,8 +64,7 @@ async function request(path, { method = 'GET', body, headers, params } = {}) {
       data?.message || data?.error || `Request failed (${response.status})`
 
     if (response.status === 401) {
-      localStorage.removeItem('access_token')
-      localStorage.removeItem('auth_user')
+      useAuthStore.getState().logout()
     }
 
     throw new ApiError(message, response.status, data?.errors || null)

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ShieldCheck, Save } from 'lucide-react'
 import usePageTitle from '@/hooks/usePageTitle'
-import { useRoles, useUpdateRolePermissions } from '@/hooks/useAdmin'
+import { useRoles, useRolePermissions, useUpdateRolePermissions } from '@/hooks/useAdmin'
 import useToastStore from '@/app/store/useToastStore'
 import PageHeader from '@/components/layout/PageHeader'
 import Card, { CardBody, CardHeader } from '@/components/ui/Card'
@@ -22,11 +22,9 @@ export default function RolesPage() {
   const toast = useToastStore()
 
   const rolesQuery = useRoles()
-  const updateRole = useUpdateRolePermissions()
 
   const roles = rolesQuery.data?.items || []
   const [selectedKey, setSelectedKey] = useState('')
-  const [permissions, setPermissions] = useState([])
   const initializedRef = useRef(false)
 
   useEffect(() => {
@@ -38,12 +36,19 @@ export default function RolesPage() {
 
   const selectedRole = roles.find((role) => role.key === selectedKey)
 
-  useEffect(() => {
-    if (!selectedKey) return
-    setPermissions(ROLE_PERMISSIONS[selectedKey] || [])
-  }, [selectedKey])
+  const permissionsQuery = useRolePermissions(selectedRole?.id)
+  const [checkedPermissions, setCheckedPermissions] = useState([])
+  const permissions = checkedPermissions
 
-  const admin = isAdmin(permissions)
+  useEffect(() => {
+    if (permissionsQuery.isSuccess) {
+      setCheckedPermissions(permissionsQuery.data?.permissions || [])
+    }
+  }, [permissionsQuery.data]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const updateRole = useUpdateRolePermissions()
+
+  const admin = selectedRole?.grantAll || isAdmin(permissions)
 
   const groupState = useMemo(() => {
     if (admin) return {}
@@ -56,7 +61,7 @@ export default function RolesPage() {
   }, [permissions, admin])
 
   const togglePermission = (key) => {
-    setPermissions((current) =>
+    setCheckedPermissions((current) =>
       current.includes(key) ? current.filter((item) => item !== key) : [...current, key],
     )
   }
@@ -64,18 +69,18 @@ export default function RolesPage() {
   const toggleGroup = (group) => {
     const keys = group.permissions.map((permission) => permission.key)
     const allChecked = keys.every((key) => permissions.includes(key))
-    setPermissions((current) =>
+    setCheckedPermissions((current) =>
       allChecked ? current.filter((item) => !keys.includes(item)) : [...new Set([...current, ...keys])],
     )
   }
 
   const handleSave = async () => {
-    if (!selectedKey || admin) return
+    if (!selectedRole || admin) return
     try {
-      await updateRole.mutateAsync({ roleKey: selectedKey, permissions })
+      await updateRole.mutateAsync({ roleId: selectedRole.id, permissions })
       toast.success(t('roles.updated'))
     } catch {
-      /* handled by mock error toast */
+      /* handled by error toast */
     }
   }
 
@@ -108,7 +113,7 @@ export default function RolesPage() {
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-medium text-slate-800 dark:text-slate-100">{role.name}</span>
-                      {isAdmin(ROLE_PERMISSIONS[role.key]) ? (
+                      {isAdmin(ROLE_PERMISSIONS[role.key]) || role.grantAll ? (
                         <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">*</span>
                       ) : null}
                     </div>

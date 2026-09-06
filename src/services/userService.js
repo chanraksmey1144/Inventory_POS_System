@@ -20,7 +20,8 @@ export const userService = {
     return api.delete('/users', { params: { id } })
   },
   resetPassword(id) {
-    return api.patch('/users', { id, passwordReset: true })
+    const password = `P@ss${Math.random().toString(36).slice(2, 8)}`
+    return api.patch('/users', { id, password, must_change_password: true })
   },
 }
 
@@ -28,11 +29,11 @@ export const roleService = {
   list() {
     return api.get('/roles')
   },
-  permissions(roleKey) {
-    return api.get('/roles', { detail: 'key', params: { key: roleKey } })
+  permissions(roleId) {
+    return api.get(`/roles/${roleId}/permissions`)
   },
-  updatePermissions(roleKey, permissions) {
-    return api.put('/roles', { key: roleKey, permissions })
+  updatePermissions(roleId, permissions) {
+    return api.put(`/roles/${roleId}/permissions`, { permissions })
   },
 }
 

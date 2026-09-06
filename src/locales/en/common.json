@@ -167,7 +167,7 @@
     "backToLogin": "Back to sign in",
     "resetLinkSent": "If an account exists for this email, a reset link has been sent.",
     "invalidCredentials": "Invalid email or password.",
-    "demoHint": "Use demo@storemaster.com / password to sign in"
+    "demoHint": "Use budi.cashier@pos.com / Password123! to sign in"
   },
   "dashboard": {
     "title": "Dashboard",

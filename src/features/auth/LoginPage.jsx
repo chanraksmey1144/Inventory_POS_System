@@ -35,7 +35,7 @@ export default function LoginPage() {
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: 'demo@storemaster.com', password: 'password', rememberMe: true },
+    defaultValues: { email: 'budi.cashier@pos.com', password: 'Password123!', rememberMe: true },
   })
 
   usePageTitle('auth.login')
@@ -76,7 +76,7 @@ export default function LoginPage() {
           label={t('auth.email')}
           type="email"
           autoComplete="email"
-          placeholder="demo@storemaster.com"
+          placeholder="budi.cashier@pos.com"
           error={errors.email?.message}
           {...register('email')}
         />

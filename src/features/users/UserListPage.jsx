@@ -207,7 +207,7 @@ export default function UserListPage() {
           <Select value={role} onChange={handleFilterChange(setRole)} className="max-w-44">
             <option value="">{t('users.allRoles')}</option>
             {roles.map((item) => (
-              <option key={item.key} value={item.key}>
+              <option key={item.id} value={item.id}>
                 {item.name}
               </option>
             ))}

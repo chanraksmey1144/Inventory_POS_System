@@ -54,12 +54,23 @@ export function useRoles() {
   })
 }
 
+export function useRolePermissions(roleId) {
+  return useQuery({
+    queryKey: ['roles', roleId, 'permissions'],
+    queryFn: () => roleService.permissions(roleId),
+    enabled: Boolean(roleId),
+  })
+}
+
 export function useUpdateRolePermissions() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ roleKey, permissions }) =>
-      roleService.updatePermissions(roleKey, permissions),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['roles'] }),
+    mutationFn: ({ roleId, permissions }) =>
+      roleService.updatePermissions(roleId, permissions),
+    onSuccess: (_data, { roleId }) => {
+      queryClient.invalidateQueries({ queryKey: ['roles'] })
+      queryClient.invalidateQueries({ queryKey: ['roles', roleId, 'permissions'] })
+    },
   })
 }
 
